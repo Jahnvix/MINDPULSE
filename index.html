@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MindPulse Risk Assessment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <div class="hero-text">
+          <div class="eyebrow">AI-Based Mental Health Risk Assessment</div>
+          <h1>MindPulse Risk Lens</h1>
+          <p class="lead">
+            A private, on-device screening tool that turns questionnaire data into
+            an interpretable risk signal. Answer the questions, review the
+            drivers, and export your assessment.
+          </p>
+          <div class="hero-actions">
+            <button id="assessBtn" class="primary">Run Assessment</button>
+            <button id="sampleBtn">Use Sample Data</button>
+          </div>
+        </div>
+        <div class="hero-cards">
+          <div class="metric-card">
+            <div class="metric-label">Questions Answered</div>
+            <div id="answeredMetric" class="metric-value">0/12</div>
+            <div class="metric-sub">Aim for 8+ for a stable signal.</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Data Quality</div>
+            <div id="dataQuality" class="metric-value">0%</div>
+            <div class="metric-sub">Completeness of questionnaire data.</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Model Confidence</div>
+            <div id="confidenceMetric" class="metric-value">--</div>
+            <div class="metric-sub">Updates as responses change.</div>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="card survey-card">
+            <div class="card-header">
+              <div>
+                <div class="label">Questionnaire</div>
+                <h2>Over the last 2 weeks</h2>
+              </div>
+              <div id="progressText" class="chip">0% complete</div>
+            </div>
+            <div id="questionList" class="question-list"></div>
+            <div class="progress">
+              <div class="progress-track">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
+              <div id="progressCaption" class="progress-caption">
+                Answer at least 6 questions to generate a signal.
+              </div>
+            </div>
+          </div>
+
+          <div class="card controls-card">
+            <div class="label">Actions</div>
+            <div class="control-row">
+              <button id="resetBtn" class="ghost">Clear Responses</button>
+              <button id="downloadBtn" class="ghost">Download JSON</button>
+              <button id="exportCsvBtn" class="ghost">Export CSV</button>
+              <button id="exportPdfBtn" class="ghost">Export PDF</button>
+            </div>
+            <div class="control-row">
+              <input
+                id="importCsvInput"
+                type="file"
+                accept=".csv"
+                hidden
+              />
+              <button id="importCsvBtn">Import CSV (Batch)</button>
+              <button id="sampleBatchBtn">Load Sample Batch</button>
+            </div>
+            <p class="helper">
+              Responses stay in your browser and never leave this page unless you
+              connect an external API.
+            </p>
+            <p class="mini-note">
+              CSV headers should match question ids (example: interest, hopeless,
+              anxious). Include an optional respondent_id column.
+            </p>
+          </div>
+
+          <div class="card safety-card">
+            <div class="label">Safety Note</div>
+            <p>
+              This is an educational screening tool, not a diagnosis. If you are
+              in immediate danger or thinking about self-harm, contact local
+              emergency services. In the US, call or text 988 for the Suicide
+              and Crisis Lifeline.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="card result-card" id="resultCard">
+            <div class="card-header">
+              <div>
+                <div class="label">Risk Signal</div>
+                <h2 id="riskLevel">Complete the questionnaire</h2>
+              </div>
+              <div id="riskBadge" class="risk-badge neutral">Awaiting data</div>
+            </div>
+            <div class="score-grid">
+              <div class="score">
+                <div id="riskScore" class="score-value">--</div>
+                <div class="score-label">Estimated risk probability</div>
+              </div>
+              <div class="score">
+                <div id="confidenceScore" class="score-value">--</div>
+                <div class="score-label">Model confidence</div>
+              </div>
+            </div>
+            <div class="gauge">
+              <div class="gauge-track">
+                <div id="riskGauge" class="gauge-fill"></div>
+              </div>
+              <div class="gauge-labels">
+                <span>Low</span>
+                <span>Moderate</span>
+                <span>High</span>
+              </div>
+            </div>
+            <div id="riskInsight" class="insight">
+              Answer a few questions to see your assessment.
+            </div>
+            <div id="safetyAlert" class="alert hidden"></div>
+            <div id="lastUpdated" class="timestamp">Not updated yet.</div>
+          </div>
+
+          <div class="card breakdown-card">
+            <div class="label">Drivers</div>
+            <div class="split">
+              <div>
+                <h3>Contributing factors</h3>
+                <div id="riskDrivers" class="tag-list"></div>
+              </div>
+              <div>
+                <h3>Protective factors</h3>
+                <div id="protectiveFactors" class="tag-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card data-card">
+            <div class="card-header">
+              <div>
+                <div class="label">Questionnaire Data</div>
+                <h2>Response summary</h2>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Signal</th>
+                    <th>Response</th>
+                    <th>Impact</th>
+                  </tr>
+                </thead>
+                <tbody id="dataTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card batch-card">
+            <div class="label">Batch Scoring</div>
+            <div class="batch-actions">
+              <button id="importBatchBtn">Import CSV</button>
+              <button id="exportBatchBtn" class="ghost">Download Results CSV</button>
+            </div>
+            <div class="batch-metrics">
+              <div class="batch-metric">
+                <span>Total</span>
+                <strong id="batchTotal">0</strong>
+              </div>
+              <div class="batch-metric">
+                <span>Average risk</span>
+                <strong id="batchAverage">--</strong>
+              </div>
+              <div class="batch-metric">
+                <span>High risk</span>
+                <strong id="batchHigh">0</strong>
+              </div>
+              <div class="batch-metric">
+                <span>Self-harm flags</span>
+                <strong id="batchFlags">0</strong>
+              </div>
+            </div>
+            <div id="batchSummary" class="mini-note">No batch loaded yet.</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Respondent</th>
+                    <th>Completion</th>
+                    <th>Risk</th>
+                    <th>Level</th>
+                    <th>Confidence</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody id="batchTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card model-card">
+            <div class="label">AI Model</div>
+            <p class="model-copy">
+              The model uses a transparent weighted scoring system with a
+              calibrated probability curve. Safety signals and sustained distress
+              are weighted highest, while support and restorative activity reduce
+              risk.
+            </p>
+            <div id="modelFactors" class="model-factors"></div>
+          </div>
+
+          <div class="card settings-card">
+            <div class="label">Model Settings</div>
+            <div class="settings-grid">
+              <label class="toggle">
+                <input id="apiToggle" type="checkbox" />
+                <span>Use API scoring</span>
+              </label>
+              <div class="field">
+                <label for="apiEndpoint">Scoring endpoint URL</label>
+                <input id="apiEndpoint" type="text" placeholder="https://api.example.com/score" />
+              </div>
+              <div class="field">
+                <label for="batchEndpoint">Batch endpoint URL (optional)</label>
+                <input id="batchEndpoint" type="text" placeholder="https://api.example.com/score/batch" />
+              </div>
+              <div class="field">
+                <label for="apiKey">API key (optional)</label>
+                <input id="apiKey" type="password" placeholder="Bearer token" />
+              </div>
+              <div id="apiStatus" class="mini-note">Local scoring only.</div>
+            </div>
+            <div class="divider"></div>
+            <div class="label">Question Weights & Domains</div>
+            <div id="weightEditor" class="weight-editor"></div>
+            <button id="recalcBatchBtn" class="ghost">Recalculate Batch</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
