@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: mindpulse
+    runtime: static
+    plan: free
+    branch: master
+    buildCommand: "echo \"No build step\""
+    staticPublishPath: "."
+    autoDeployTrigger: commit
